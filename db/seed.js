@@ -1,9 +1,10 @@
-const { client, getAllUsers, createUser } = require("./index");
+const { client, getAllUsers, createUser, updateUser } = require("./index");
 
 async function dropTables() {
   try {
     console.log("Starting to drop tables...");
     await client.query(`
+    DROP TABLE IF EXISTS posts;
 		DROP TABLE IF EXISTS users;
 		`);
 
@@ -31,6 +32,26 @@ async function createTables() {
     console.log("Finished building tables!");
   } catch (error) {
     console.error("Error building tables!");
+    throw error;
+  }
+}
+
+async function createPostsTable() {
+  try {
+    console.log("Starting to build post tables...");
+    await client.query(`
+		  CREATE TABLE posts (
+			id SERIAL PRIMARY KEY,
+			"authorId" INTEGER REFERENCES users(id) NOT NULL,
+			title VARCHAR(255) NOT NULL,
+			content TEXT NOT NULL,
+			active BOOLEAN DEFAULT true
+		  );
+		  `);
+
+    console.log("Finished building post tables!");
+  } catch (error) {
+    console.error("Error building post tables!");
     throw error;
   }
 }
@@ -71,6 +92,7 @@ async function rebuildDB() {
 
     await dropTables();
     await createTables();
+    await createPostsTable();
     await createInitialUsers();
   } catch (error) {
     throw error;
@@ -81,8 +103,16 @@ async function testDB() {
   try {
     console.log("Starting to test database...");
 
+    console.log("Calling getAllUsers");
     const users = await getAllUsers();
-    console.log("getAllUsers:", users);
+    console.log("Result:", users);
+
+    console.log("Calling updateUser on users[0]");
+    const updateUserResult = await updateUser(users[0].id, {
+      name: "Newname Sogood",
+      location: "Lesterville, KY",
+    });
+    console.log("Result:", updateUserResult);
 
     console.log("Finished database tests!");
   } catch (error) {
