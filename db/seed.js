@@ -7,7 +7,8 @@ const {
   createPost,
   getAllPosts,
   updatePost,
-  getPostsByUser
+  getPostsByUser,
+  createTags,
 } = require("./index");
 
 async function dropTables() {
@@ -15,6 +16,8 @@ async function dropTables() {
     console.log("Starting to drop tables...");
 
     await client.query(`
+    DROP TABLE IF EXISTS post_tags;
+    DROP TABLE IF EXISTS tags;
     DROP TABLE IF EXISTS posts;
 		DROP TABLE IF EXISTS users;
 		`);
@@ -36,34 +39,31 @@ async function createTables() {
 			password varchar(255) NOT NULL,
 			name VARCHAR(255) NOT NULL,
 			location VARCHAR(255) NOT NULL,
-			active BOOLEAN DEFAULT true
-		  );
-      
+			active BOOLEAN DEFAULT true );
+		  
+      CREATE TABLE posts (
+      id SERIAL PRIMARY KEY,
+      "authorId" INTEGER REFERENCES users(id) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      active BOOLEAN DEFAULT true
+      );
+
+      CREATE TABLE tags (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL
+      );
+
+      CREATE TABLE post_tags (
+      "postId" INTEGER REFERENCES posts(id) UNIQUE NOT NULL,
+      "tagId" INTEGER REFERENCES tags(id) UNIQUE NOT NULL
+      );
+
 		  `);
 
     console.log("Finished building tables!");
   } catch (error) {
     console.error("Error building tables!");
-    throw error;
-  }
-}
-
-async function createPostsTable() {
-  try {
-    console.log("Starting to build post tables...");
-    await client.query(`
-		  CREATE TABLE posts (
-			id SERIAL PRIMARY KEY,
-			"authorId" INTEGER REFERENCES users(id) NOT NULL,
-			title VARCHAR(255) NOT NULL,
-			content TEXT NOT NULL,
-			active BOOLEAN DEFAULT true
-		  );
-		  `);
-
-    console.log("Finished building post tables!");
-  } catch (error) {
-    console.error("Error building post tables!");
     throw error;
   }
 }
@@ -131,11 +131,10 @@ async function rebuildDB() {
 
     await dropTables();
     await createTables();
-    await createPostsTable();
     await createInitialUsers();
     await createInitialPosts();
   } catch (error) {
-    console.log("Error during rebuildDB")
+    console.log("Error during rebuildDB");
     throw error;
   }
 }
@@ -151,7 +150,7 @@ async function testDB() {
     console.log("Calling updateUser on users[0]");
     const updateUserResult = await updateUser(users[0].id, {
       name: "Newname Sogood",
-      location: "Lesterville, KY"
+      location: "Lesterville, KY",
     });
     console.log("Result:", updateUserResult);
 
@@ -166,7 +165,7 @@ async function testDB() {
     });
     console.log("Result:", updatePostResult);
 
-    console.log("Calling getUserById with 1")
+    console.log("Calling getUserById with 1");
     const albert = await getUserById(1);
     console.log("Results:", albert);
 

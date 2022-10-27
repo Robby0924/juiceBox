@@ -43,6 +43,41 @@ async function createPost({ authorId, title, content }) {
   }
 }
 
+async function createTags(tagList) {
+  if (tagList.length === 0) {
+    return;
+  }
+
+  const insertValues = tagList.map((_, index) => `$${index + 1}`).join("), (");
+
+  console.log(insertValues);
+
+  const selectValues = tagList.map((_, index) => `$${index + 1}`).join(", ");
+  console.log(selectValues);
+
+  try {
+    await client.query(
+      `
+      INSERT INTO tags(name)
+      VALUES (${insertValues})
+      ON CONFLICT (name) DO NOTHING;`,
+      tagList
+    );
+
+    const { rows } = await client.query(
+      `
+      SELECT * FROM tags
+      WHERE name
+      IN (${selectValues});`,
+      tagList
+    );
+
+    return rows;
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function getAllPosts() {
   try {
     const { rows } = await client.query(`
@@ -161,4 +196,5 @@ module.exports = {
   getAllPosts,
   updatePost,
   getPostsByUser,
+  createTags,
 };
