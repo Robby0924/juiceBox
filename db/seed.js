@@ -1,4 +1,4 @@
-const { client, getAllUsers, createUser, updateUser } = require("./index");
+const { client, getAllUsers, createUser, updateUser, getUserById, createPost, getAllPosts, updatePost } = require("./index");
 
 async function dropTables() {
   try {
@@ -55,7 +55,29 @@ async function createPostsTable() {
     throw error;
   }
 }
+async function createInitialPosts(){
+	try {
+		const [albert, sandra, glamgal] = await getAllUsers();
 
+		await createPost({
+			authorId: albert.id,
+			title: "albert Post",
+			content: "This is my first post."
+		});
+		await createPost({
+			authorId: sandra.id,
+			title: "sandra Post",
+			content: "This is my first post."
+		});
+		await createPost({
+			authorId: glamgal.id,
+			title: "glamgal Post",
+			content: "This is my first post."
+		});
+	} catch (error) {
+		throw error;
+	}
+}
 async function createInitialUsers() {
   try {
     console.log("Starting to create users...");
@@ -65,18 +87,21 @@ async function createInitialUsers() {
       password: "bertie99",
       name: "Al Bert",
       location: "Sidney, Australia",
+	  post: []
     });
     const sandra = await createUser({
       username: "sandra",
       password: "2sandy4me",
       name: "Just Sandra",
       location: "Ain't tellin'",
+	  post: []
     });
     const glamgal = await createUser({
       username: "glamgal",
       password: "soglam",
       name: "Joshua",
       location: "Upper East Side",
+	  post: []
     });
 
     console.log("Finished creating users!");
@@ -94,6 +119,8 @@ async function rebuildDB() {
     await createTables();
     await createPostsTable();
     await createInitialUsers();
+	await createInitialPosts();
+	
   } catch (error) {
     throw error;
   }
@@ -114,6 +141,18 @@ async function testDB() {
     });
     console.log("Result:", updateUserResult);
 
+	console.log("Calling getAllPosts");
+	const posts = await getAllPosts();
+	console.log("Result:", posts)
+
+	console.log("Calling updatePost on posts[0]");
+	const updatePostResult = await updatePost(posts[0].id, {
+		title: "New Title",
+		content: "Updated Content"
+	});
+	console.log("Result:", updatePostResult);
+	const albert = await getUserById(1);
+	console.log("Results:", albert)
     console.log("Finished database tests!");
   } catch (error) {
     console.error("Error testing database!");

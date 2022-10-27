@@ -4,56 +4,6 @@ const client = new Client("postgres://localhost:5432/juicebox-dev");
 module.exports = {
   client,
 };
-
-async function createPost({ authorId, title, content }) {
-  try {
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function updatePost({ title, content, active }) {
-  try {
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function getAllPosts() {
-  try {
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function getPostsByUser(userId) {
-  try {
-    const { rows } = await client.query(`
-		SELECT * FROM posts
-		WHERE "authorId"=${userId};`);
-    return rows;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function getUserById(userId) {
-  try {
-    const {
-      rows: [user],
-    } = await client.query(`
-		SELECT id, username, name, location, active
-		FROM users
-		WHERE id=${userId}`);
-
-    if (!user) {
-      return null;
-    }
-  } catch (error) {
-    throw error;
-  }
-}
-
 async function createUser({ username, password, name, location }) {
   try {
     const {
@@ -74,13 +24,101 @@ async function createUser({ username, password, name, location }) {
   }
 }
 
+async function createPost({ authorId, title, content }) {
+  try {
+    const {
+      rows: [post]
+    } = await client.query(
+      `
+	  INSERT INTO posts("authorId", title, content) 
+	  VALUES($1, $2, $3) 
+	  RETURNING *;
+	`,
+      [authorId, title, content]
+    );
+    return post;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
+
+async function getAllPosts() {
+  try {
+	const {rows} = await client.query(`
+	SELECT * FROM posts;`);
+	return rows;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
 async function getAllUsers() {
   const { rows } = await client.query(
-    `SELECT id, username, name, location, active
+	`SELECT id, username, name, location, active
 		FROM users;`
   );
   return rows;
 }
+async function getPostsByUser(userId) {
+  try {
+    const { rows } = await client.query(`
+		SELECT * FROM posts
+		WHERE "authorId"=${userId};`);
+    return rows;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getUserById(userId) {
+  try {
+    const {
+      rows: [user],
+    } = await client.query(`
+		SELECT id, username, name, location, active
+		FROM users
+		WHERE id=${userId}`);
+    console.log(user, "this is user");
+    if (!user) {
+      return null;
+    } else {
+      delete user.password;
+      user.posts = getPostsByUser(userId);
+    }
+    return user;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function updatePost(id, fields = {}) {
+	const setString = Object.keys(fields)
+	  .map((key, index) => `"${key}"=$${index + 1}`)
+	  .join(", ");
+  
+	if (setString.length === 0) {
+	  return;
+	}
+	try {
+	  const {
+		rows: [post],
+	  } = await client.query(
+		`
+		UPDATE posts
+		SET ${setString}
+		WHERE id=${id}
+		RETURNING *;
+		`,
+		Object.values(fields)
+	  );
+	  return post;
+	} catch (error) {
+	  throw error;
+	}
+  }
 
 async function updateUser(id, fields = {}) {
   const setString = Object.keys(fields)
@@ -113,18 +151,8 @@ module.exports = {
   getAllUsers,
   createUser,
   updateUser,
+  getUserById,
+  createPost,
+  getAllPosts,
+  updatePost
 };
-
-// async function createUser({username, password}) {
-// 	try {
-// 		const result = await client.query(`
-// 		INSERT INTO users(username, password)
-// 		VALUES($1, $2)
-// 		ON CONFLICT (username) DO NOTHING
-// 		RETURNING *;
-// 		`, [username, password]);
-// 		return result;
-// 	} catch (error) {
-// 		throw error;
-// 	}
-// }
