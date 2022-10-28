@@ -10,7 +10,8 @@ const {
   getPostsByUser,
   createTags,
   addTagsToPost,
-  createPostTag
+  createPostTag,
+  getPostById,
 } = require("./index");
 
 async function dropTables() {
@@ -57,8 +58,9 @@ async function createTables() {
       );
 
       CREATE TABLE post_tags (
-      "postId" INTEGER REFERENCES posts(id) UNIQUE NOT NULL,
-      "tagId" INTEGER REFERENCES tags(id) UNIQUE NOT NULL
+      "postId" INTEGER REFERENCES posts(id) NOT NULL,
+      "tagId" INTEGER REFERENCES tags(id) NOT NULL,
+      UNIQUE ("postId", "tagId")
       );
 
 		  `);
