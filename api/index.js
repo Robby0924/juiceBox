@@ -5,6 +5,10 @@ const jwt = require("jsonwebtoken");
 const { getUserById } = require("../db");
 const { JWT_SECRET } = process.env;
 
+
+// test for github
+
+
 //Authenticates user id so it can be used in other routes.
 apiRouter.use(async (req, res, next) => {
   const prefix = "Bearer ";
