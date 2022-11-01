@@ -1,9 +1,9 @@
 const { Client } = require("pg");
 
-const client = new Client(process.env.DATABASE_URL || "postgres://localhost:5432/juicebox-dev");
-module.exports = {
-  client,
-};
+const client = new Client({
+  connectionString: process.env.DATABASE_URL || 'postgres://localhost:5432/juicebox-dev',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+});
 
 async function createUser({ username, password, name, location }) {
   try {
@@ -164,8 +164,6 @@ async function getAllPosts() {
 	SELECT id
   FROM posts;
   `);
-
-    console.log(postIds, "this is postIds");
 
     const posts = await Promise.all(
       postIds.map((post) => getPostById(post.id))
