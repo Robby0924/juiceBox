@@ -3,6 +3,7 @@ const usersRouter = express.Router();
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = process.env;
 const { getAllUsers, getUserByUsername, createUser } = require("../db");
+// const { requireUser, requireActiveUser } = require("./utils");
 
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
@@ -77,6 +78,61 @@ usersRouter.post("/register", async (req, res, next) => {
     next({ name, message });
   }
 });
+
+// //--------------------------------NEW----------------------------------------------
+
+// usersRouter.delete(
+//   "/:userId",
+//   requireUser,
+//   requireActiveUser,
+//   async (req, res, next) => {
+//     try {
+//       const user = await getUserById(req.params.userId);
+//       if (user && user.id === req.user.id) {
+//         const updatedUser = await updateUser(user.id, { active: false });
+//         res.send({ user: updatedUser });
+//       } else {
+//         next(
+//           user
+//             ? {
+//                 name: "UnauthorizedUserError",
+//                 message: "You are an unauthorized user",
+//               }
+//             : {
+//                 name: "UserNotFoundError",
+//                 message: "That user does not exist",
+//               }
+//         );
+//       }
+//     } catch ({ name, message }) {
+//       next({ name, message });
+//     }
+//   }
+// );
+
+// usersRouter.patch("/:userId", requireUser,  async (req, res, next) => {
+//   try {
+//     const user = await getUserById(req.params.userId);
+//     if (user && user.id === req.user.id) {
+//       const updatedUser = await updateUser(user.id, { active: true });
+//       res.send({ user: updatedUser });
+//     } else {
+//       next(
+//         user
+//           ? {
+//               name: "UnauthorizedUserError",
+//               message: "You are an unauthorized user",
+//             }
+//           : {
+//               name: "UserNotFoundError",
+//               message: "That user does not exist",
+//             }
+//       );
+//     }
+//   } catch ({ name, message }) {
+//     next({ name, message });
+//   }
+// });
 
 usersRouter.get("/", async (req, res) => {
   const users = await getAllUsers();

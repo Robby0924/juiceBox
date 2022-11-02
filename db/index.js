@@ -1,8 +1,12 @@
 const { Client } = require("pg");
 
 const client = new Client({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost:5432/juicebox-dev',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  connectionString:
+    process.env.DATABASE_URL || "postgres://localhost:5432/juicebox-dev",
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : undefined,
 });
 
 async function createUser({ username, password, name, location }) {
@@ -89,15 +93,14 @@ async function getPostById(postId) {
     WHERE id=$1;
     `,
       [postId]
-      
     );
     if (!post) {
       throw {
         name: "PostNotFoundError",
-        message: "Could not find a post with that postId"
+        message: "Could not find a post with that postId",
       };
     }
-    
+
     const { rows: tags } = await client.query(
       `
     SELECT tags.*
@@ -224,13 +227,18 @@ async function getUserById(userId) {
 		FROM users
 		WHERE id=${userId}`);
 
+    // if (!user) {
+    //   throw {
+    //     name: "UserNotFoundError",
+    //     message: "Could not find a user with that userId",
+    //   };
+    // }
+
     if (!user) {
       return null;
     }
 
     user.post = await getPostsByUser(userId);
-
-    // delete user.password; //delete the 'password' key from the returned object
 
     return user;
   } catch (error) {
@@ -328,11 +336,16 @@ async function updateUser(id, fields = {}) {
 
 async function getUserByUsername(username) {
   try {
-    const {rows: [user]} = await client.query(`
+    const {
+      rows: [user],
+    } = await client.query(
+      `
     SELECT *
     FROM users
     WHERE username=$1
-    `, [username])
+    `,
+      [username]
+    );
 
     return user;
   } catch (error) {
