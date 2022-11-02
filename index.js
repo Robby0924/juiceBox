@@ -1,4 +1,5 @@
 const {PORT = 3000} = process.env;
+//express setup
 const express = require("express");
 const server = express();
 const apiRouter = require("./api");
