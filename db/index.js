@@ -1,5 +1,9 @@
+//Set up postgres first with initial database
+//psql, createdb databaseName
+//PG is node's postgresql adapter
 const { Client } = require("pg");
 
+//connects new client to juicebox-dev database
 const client = new Client({
   connectionString:
     process.env.DATABASE_URL || "postgres://localhost:5432/juicebox-dev",
@@ -9,17 +13,23 @@ const client = new Client({
       : undefined,
 });
 
+//setting up function for creating new users
 async function createUser({ username, password, name, location }) {
   try {
     const {
+      //client.query fires first and takes all the values passed into createUser( ).
+      //Those values are passed into client.query's 2nd parameter
+      //client.query automatically equates the 2nd parameter to values in the 1st parameter
       rows: [user],
     } = await client.query(
+      //postgres input
       `
 		INSERT INTO users(username, password, name, location) 
-		VALUES($1, $2, $3, $4) 
+		VALUES($1, $2, $3, $4)
 		ON CONFLICT (username) DO NOTHING 
 		RETURNING *;
 	  `,
+      //this array should match number of values above
       [username, password, name, location]
     );
 
@@ -29,6 +39,7 @@ async function createUser({ username, password, name, location }) {
   }
 }
 
+//same as createUser
 async function createPost({ authorId, title, content, tags = [] }) {
   try {
     const {
@@ -44,22 +55,31 @@ async function createPost({ authorId, title, content, tags = [] }) {
 
     const tagList = await createTags(tags);
 
+    //returns the post with the specific tags attached to it
     return await addTagsToPost(post.id, tagList);
   } catch (error) {
     throw error;
   }
 }
 
+//setting up a function for creating tags
 async function createTags(tagList) {
+  //if the array of tags is empty, exit out of the function
   if (tagList.length === 0) {
     return;
   }
 
+  //maps out the list of tags and joins them to include the dollar sign. This is required when inserted by client.query into the table.
+  //In order not to replace the existing index in the table, it's shifted over by 1.
+  //Value syntax need to be ( x ), ( y ) so the join method has to be specific
   const insertValues = tagList.map((_, index) => `$${index + 1}`).join("), (");
 
+  //maps out the list of tags and joins them to include the dollar sign.
   const selectValues = tagList.map((_, index) => `$${index + 1}`).join(", ");
 
   try {
+    //Insert new tag(s) into name column in tags table
+    //If the tag is already in the name column, do nothing
     await client.query(
       `
       INSERT INTO tags(name)
@@ -69,6 +89,9 @@ async function createTags(tagList) {
     );
 
     const { rows } = await client.query(
+      //Selects all columns from tags table
+      //If the tag exists in the name column, return true.
+      //HELP
       `
       SELECT * FROM tags
       WHERE name
@@ -82,11 +105,14 @@ async function createTags(tagList) {
   }
 }
 
+//Setting up a function for getting posts by their id
 async function getPostById(postId) {
   try {
     const {
       rows: [post],
     } = await client.query(
+      //Select all columns from posts table
+      //
       `
     SELECT *
     FROM posts
@@ -94,6 +120,7 @@ async function getPostById(postId) {
     `,
       [postId]
     );
+    //If the post doesn't exist, throw error.
     if (!post) {
       throw {
         name: "PostNotFoundError",
@@ -102,6 +129,8 @@ async function getPostById(postId) {
     }
 
     const { rows: tags } = await client.query(
+      //Selects all tags from the tags table.
+      //Joins post_tags table with tags.id in tags table
       `
     SELECT tags.*
     FROM tags 
@@ -132,9 +161,14 @@ async function getPostById(postId) {
     throw error;
   }
 }
+
+//Setting up a function for creating a post_tags
+//Requires a specific post Id and tag Id
 async function createPostTag(postId, tagId) {
   try {
     await client.query(
+      //Insert parameters into post_tags table
+      //If the post already includes that specific tag, do nothing.
       `
       INSERT INTO post_tags("postId", "tagId")
       VALUES ($1, $2)
@@ -147,12 +181,16 @@ async function createPostTag(postId, tagId) {
   }
 }
 
+//Setting up a function for adding tags to posts
 async function addTagsToPost(postId, tagList) {
   try {
+    //Maps out the tags that are included with the submitted post
+    //For each tag, fire createPostTag()
     const createPostTagPromises = tagList.map((tag) =>
       createPostTag(postId, tag.id)
     );
 
+    //Because this is an async function inside an async function, all awaits have to be loaded up before doing the return
     await Promise.all(createPostTagPromises);
 
     return await getPostById(postId);
@@ -161,14 +199,17 @@ async function addTagsToPost(postId, tagList) {
   }
 }
 
+//Setting up a function for getting all posts
 async function getAllPosts() {
   try {
+    //Selects id column from posts table
     const { rows: postIds } = await client.query(`
 	SELECT id
   FROM posts;
   `);
 
     const posts = await Promise.all(
+      //Maps out postIds. For each post, fire getPostById()
       postIds.map((post) => getPostById(post.id))
     );
     return posts;
@@ -177,9 +218,11 @@ async function getAllPosts() {
   }
 }
 
+//Setting up a function for getting all tags
 async function getAllTags() {
   try {
     const { rows } = await client.query(
+      //Selects id and name column from tags table
       `SELECT id, name
    FROM tags;`
     );

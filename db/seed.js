@@ -1,3 +1,6 @@
+//Finished making personal notes.
+
+//imports these functions from /db/index.js
 const {
   client,
   getAllUsers,
@@ -7,18 +10,17 @@ const {
   createPost,
   getAllPosts,
   updatePost,
-  getPostsByUser,
   createTags,
   addTagsToPost,
-  createPostTag,
-  getPostById,
   getPostsByTagName,
 } = require("./index");
 
+//Function for calling a query making sure duplicate tables don't exist.
 async function dropTables() {
   try {
     console.log("Starting to drop tables...");
 
+    //If tableName exists, drop the table
     await client.query(`
     DROP TABLE IF EXISTS post_tags;
     DROP TABLE IF EXISTS tags;
@@ -33,6 +35,7 @@ async function dropTables() {
   }
 }
 
+//Function for calling a query which creates all necessary tables
 async function createTables() {
   try {
     console.log("Starting to build tables...");
@@ -73,6 +76,7 @@ async function createTables() {
   }
 }
 
+//Function for creating hardcoded initial users so that we can use them for testing purposes.
 async function createInitialUsers() {
   try {
     console.log("Starting to create users...");
@@ -106,6 +110,7 @@ async function createInitialUsers() {
   }
 }
 
+//Function for creating hardcoded initial posts so we can use them for testing purposes.
 async function createInitialPosts() {
   try {
     const [albert, sandra, glamgal] = await getAllUsers();
@@ -138,6 +143,7 @@ async function createInitialPosts() {
   }
 }
 
+//Function for creating hardcoded initial tags so we can use them for testing purposes.
 async function createInitialTags() {
   try {
     console.log("Starting to create tags...");
@@ -180,10 +186,12 @@ async function testDB() {
   try {
     console.log("Starting to test database...");
 
+    //Tests the function for getting all users.
     console.log("Calling getAllUsers");
     const users = await getAllUsers();
     console.log("Result:", users);
 
+    //Tests the function for updating user info from a specific user.
     console.log("Calling updateUser on users[0]");
     const updateUserResult = await updateUser(users[0].id, {
       name: "Newname Sogood",
@@ -191,10 +199,12 @@ async function testDB() {
     });
     console.log("Result:", updateUserResult);
 
+    //Tests the function for getting all posts.
     console.log("Calling getAllPosts");
     const posts = await getAllPosts();
-    console.log("Result:", posts[0].tags);
+    console.log("Result:", posts);
 
+    //Tests the function for updating posts
     console.log("Calling updatePost on posts[0]");
     const updatePostResult = await updatePost(posts[0].id, {
       title: "New Title",
@@ -202,16 +212,19 @@ async function testDB() {
     });
     console.log("Result:", updatePostResult);
 
+    //Tests the function for getting a user by its user id.
     console.log("Calling getUserById with 1");
     const albert = await getUserById(1);
     console.log("Results:", albert);
 
+    //Tests the function for updating posts, specifically for changing tags.
     console.log("Calling updatePost on posts[1], only updating tags");
     const updatePostTagsResult = await updatePost(posts[1].id, {
       tags: ["#youcandoanything", "#redfish", "#bluefish"],
     });
     console.log("Result:", updatePostTagsResult);
 
+    //Tests the function for getting specific posts by tag name. One tag name can have multiple posts.
     console.log("Calling getPostsByTagName with #happy");
     const postsWithHappy = await getPostsByTagName("#happy");
     console.log("Result:", postsWithHappy[0].tags);
@@ -223,6 +236,9 @@ async function testDB() {
   }
 }
 
+//This is one long line that first starts making the database then tests the database. If it catches an error, it logs the error. Finally it ends the client.
+//The catch and finally are important because normally the terminal will throw a bunch of red errors at you if a single line is wrong.
+//Doing catch and finally prevents this from happening and proceeds with reading each line. If a specific test has an error, it doesn't prevent the other tests from executing.
 rebuildDB()
   .then(testDB)
   .catch(console.error)
