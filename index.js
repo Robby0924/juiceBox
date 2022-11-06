@@ -2,7 +2,12 @@ const {PORT = 3000} = process.env;
 //express setup
 const express = require("express");
 const server = express();
+const cors = require("cors");
 const apiRouter = require("./api");
+
+//cors allows you to access your API from React
+
+server.use(cors());
 
 
 

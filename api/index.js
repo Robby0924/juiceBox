@@ -11,9 +11,7 @@ const jwt = require("jsonwebtoken");
 const { getUserById } = require("../db");
 //Brings in secret code from .env file. Required w/ token to check authentication 
 const { JWT_SECRET } = process.env;
-//cors allows you to access your API from React
-const cors = require("cors");
-server.use(cors());
+
 
 
 //Authenticates user id so it can be used in other routes. This is typically needed in the api/index.js folder so that it only needs authentication once. 
